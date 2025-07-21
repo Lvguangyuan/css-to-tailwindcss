@@ -7,7 +7,7 @@
     </header>
 
     <!-- Editor area -->
-    <main class="flex-1 grid lg:grid-cols-2 gap-6 p-6">
+    <main class="flex-1 grid lg:grid-cols-3 gap-6 p-6">
       <!-- Left pane – raw CSS -->
       <section class="flex flex-col">
         <label class="mb-2 font-medium">Paste CSS</label>
@@ -16,12 +16,23 @@
             class="flex-1 rounded-lg border p-4 font-mono resize-none focus:ring-2 focus:ring-indigo-400"
             placeholder="e.g. .btn { background-color: #1d4ed8; padding: 0.5rem 1rem; }"
         />
+
+      </section>
+
+      <section class="flex flex-col">
         <button
             class="mt-4 self-start px-4 py-2 rounded bg-indigo-600 text-red hover:bg-indigo-700 disabled:opacity-50"
             :disabled="!cssInput.trim()"
             @click="convert"
         >
           Convert
+        </button>
+        <button
+            class="mt-4 self-start px-4 py-2 rounded bg-indigo-600 text-red hover:bg-indigo-700 disabled:opacity-50"
+            :disabled="!tailwindOutput.trim()"
+            @click="copyToClipboard"
+        >
+          Copy
         </button>
       </section>
 
@@ -87,23 +98,32 @@ const converter = new TailwindConverter({
   },
 });
 
-const inputCSS = `
-.bar {
-  padding-top: 72px;
-}`;
-
-
 function convert() {
-  alert("fdsf");
-  converter.convertCSS(inputCSS).then(({ convertedRoot, nodes }) => {
-    console.log(convertedRoot.toString());
-    console.log(nodes);
+  converter.convertCSS(cssInput.value).then(({ convertedRoot, nodes }) => {
+    const output = convertedRoot.toString()
+    tailwindOutput.value = extractApply(output);
+  });
+}
+
+/**
+ * Return the value that follows `@apply` and,
+ * if it contains “px”, convert those pixels to rem (÷ 16).
+ */
+function extractApply(css) {
+  // 1. pull out the text after `@apply` up to the semicolon
+  const raw = (css.match(/@apply\s+([^;]+);/) || [, ''])[1].trim();
+
+  // 2. swap every “[number]px” for “[number÷16]rem”
+  return raw.replace(/(\d*\.?\d+)px/g, (_, num) => {
+    const rem = parseFloat(num) / 16;
+    // - keep at most 4 decimals and strip trailing zeros
+    const clean = rem.toFixed(4).replace(/\.?0+$/, '');
+    return `${clean}rem`;
   });
 }
 
 async function copyToClipboard() {
   await navigator.clipboard.writeText(tailwindOutput.value)
-  alert('Tailwind classes copied!')
 }
 </script>
 
