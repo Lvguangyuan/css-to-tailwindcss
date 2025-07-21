@@ -1,94 +1,148 @@
 <!-- src/App.vue -->
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-100">
+  <div class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-slate-100">
     <!-- Header -->
-    <header class="bg-indigo-600 text-white px-6 py-4 shadow-md">
-      <h1 class="text-xl font-semibold">1234 CSS → TailwindCSS Converter</h1>
+    <header
+        class="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-lg"
+    >
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <h1 class="text-lg font-semibold tracking-wide text-white">
+          1234&nbsp;CSS&nbsp;→&nbsp;TailwindCSS&nbsp;Converter
+        </h1>
+        <span class="text-xs font-medium text-white/80">
+          Built with&nbsp;Vue&nbsp;3&nbsp;+&nbsp;TailwindCSS
+        </span>
+      </div>
     </header>
 
-    <!-- Editor area -->
-    <main class="flex-1 grid lg:grid-cols-3 gap-6 p-6">
-      <!-- Left pane – raw CSS -->
-      <section class="flex flex-col">
-        <label class="mb-2 font-medium">Paste CSS</label>
+    <!-- Workspace -->
+    <main
+        class="mx-auto grid w-full max-w-7xl flex-1 gap-6 p-6 lg:grid-cols-2"
+    >
+      <!-- Card – Input -->
+      <article
+          class="flex flex-col rounded-2xl bg-white/60 shadow backdrop-blur-md ring-1 ring-black/5"
+      >
+        <header class="flex items-center justify-between border-b px-6 py-4">
+          <h2 class="font-medium">Paste CSS</h2>
+          <button
+              :disabled="!cssInput.trim()"
+              @click="convert"
+              class="flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            <svg
+                v-if="!converting"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
+            </svg>
+            <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v4m0 8v4m8-8h4M4 12H0m16.24 5.66l2.83 2.83M4.93 4.93l2.83 2.83m0 8.48l-2.83 2.83m14.14-14.14l-2.83 2.83"
+              />
+            </svg>
+            Convert
+          </button>
+        </header>
+
         <textarea
             v-model="cssInput"
-            class="flex-1 rounded-lg border p-4 font-mono resize-none focus:ring-2 focus:ring-indigo-400"
             placeholder="e.g. .btn { background-color: #1d4ed8; padding: 0.5rem 1rem; }"
+            class="min-h-[16rem] flex-1 resize-none rounded-b-2xl bg-transparent p-6 font-mono focus:outline-none focus:ring-0"
         />
+      </article>
 
-      </section>
+      <!-- Card – Output -->
+      <article
+          class="flex flex-col rounded-2xl bg-white/60 shadow backdrop-blur-md ring-1 ring-black/5"
+      >
+        <header class="flex items-center justify-between border-b px-6 py-4">
+          <h2 class="font-medium">Generated Tailwind classes</h2>
+          <button
+              :disabled="!tailwindOutput.trim()"
+              @click="copyToClipboard"
+              class="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 16h8m-4-4h4m-9 8h9a2 2 0 002-2V7m-4 0H7a2 2 0 00-2 2v11a2 2 0 002 2h9a2 2 0 002-2V7a2 2 0 00-2-2h-3l-2-2H9l-2 2H4"
+              />
+            </svg>
+            Copy
+          </button>
+        </header>
 
-      <section class="flex flex-col">
-        <button
-            class="mt-4 self-start px-4 py-2 rounded bg-indigo-600 text-red hover:bg-indigo-700 disabled:opacity-50"
-            :disabled="!cssInput.trim()"
-            @click="convert"
-        >
-          Convert
-        </button>
-        <button
-            class="mt-4 self-start px-4 py-2 rounded bg-indigo-600 text-red hover:bg-indigo-700 disabled:opacity-50"
-            :disabled="!tailwindOutput.trim()"
-            @click="copyToClipboard"
-        >
-          Copy
-        </button>
-      </section>
-
-      <!-- Right pane – Tailwind classes -->
-      <section class="flex flex-col">
-        <label class="mb-2 font-medium">Generated Tailwind classes</label>
         <textarea
             readonly
             :value="tailwindOutput"
-            class="flex-1 rounded-lg border p-4 font-mono bg-gray-50 resize-none"
+            class="min-h-[16rem] flex-1 resize-none rounded-b-2xl bg-gray-50 p-6 font-mono text-gray-800 focus:outline-none"
         />
-        <button
-            v-if="tailwindOutput"
-            class="mt-4 self-start px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"
-            @click="copyToClipboard"
-        >
-          Copy
-        </button>
-      </section>
+      </article>
     </main>
 
     <!-- Footer -->
-    <footer class="text-center text-sm text-gray-500 py-4">
-      Built with&nbsp;Vue 3 + TailwindCSS
+    <footer class="pb-6">
+      <p class="text-center text-xs text-gray-500/80">
+        © 2025 — Made&nbsp;with ❤️ by Your Name
+      </p>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { TailwindConverter } from 'css-to-tailwindcss';
+import { TailwindConverter } from 'css-to-tailwindcss'
 
-/** --- reactive state --- */
+/* --- reactive state --- */
 const cssInput = ref('')
 const tailwindOutput = ref('')
+const converting = ref(false)
 
 const converter = new TailwindConverter({
-  remInPx: 16, // set null if you don't want to convert rem to pixels
-  postCSSPlugins: [], // add any postcss plugins to this array
+  remInPx: 16,
+  postCSSPlugins: [],
   tailwindConfig: {
-    // your tailwind config here
     content: [],
     theme: {
       extend: {
         colors: {
           'custom-color': {
             100: '#123456',
-            200: 'hsla(210, 100%, 51.0%, 0.016)',
+            200: 'hsla(210,100%,51%,0.016)',
             300: '#654321',
-            gold: 'hsl(41, 28.3%, 79.8%)',
-            marine: 'rgb(4, 55, 242, 0.75)',
+            gold: 'hsl(41,28.3%,79.8%)',
+            marine: 'rgb(4,55,242,0.75)',
           },
         },
-        screens: {
-          'custom-screen': { min: '768px', max: '1024px' },
-        },
+        screens: { 'custom-screen': { min: '768px', max: '1024px' } },
       },
       supports: {
         grid: 'display: grid',
@@ -96,38 +150,33 @@ const converter = new TailwindConverter({
       },
     },
   },
-});
+})
 
-function convert() {
-  converter.convertCSS(cssInput.value).then(({ convertedRoot, nodes }) => {
-    const output = convertedRoot.toString()
-    tailwindOutput.value = extractApply(output);
-  });
+async function convert() {
+  if (!cssInput.value.trim()) return
+  converting.value = true
+  const { convertedRoot } = await converter.convertCSS(cssInput.value)
+  tailwindOutput.value = extractApply(convertedRoot.toString())
+  converting.value = false
 }
 
 /**
- * Return the value that follows `@apply` and,
- * if it contains “px”, convert those pixels to rem (÷ 16).
+ * Extracts the part after `@apply` and converts px → rem.
  */
-function extractApply(css) {
-  // 1. pull out the text after `@apply` up to the semicolon
-  const raw = (css.match(/@apply\s+([^;]+);/) || [, ''])[1].trim();
-
-  // 2. swap every “[number]px” for “[number÷16]rem”
+function extractApply(css: string) {
+  const raw = (css.match(/@apply\s+([^;]+);/) || [, ''])[1].trim()
   return raw.replace(/(\d*\.?\d+)px/g, (_, num) => {
-    const rem = parseFloat(num) / 16;
-    // - keep at most 4 decimals and strip trailing zeros
-    const clean = rem.toFixed(4).replace(/\.?0+$/, '');
-    return `${clean}rem`;
-  });
+    const rem = parseFloat(num) / 16
+    return `${rem.toFixed(4).replace(/\.?0+$/, '')}rem`
+  })
 }
 
 async function copyToClipboard() {
+  if (!tailwindOutput.value) return
   await navigator.clipboard.writeText(tailwindOutput.value)
 }
 </script>
 
-<!-- Hook Tailwind only once in index.html (default Vite template already has it) -->
 <style>
-/* Optional: custom global styles */
+/* No additional global styles needed – all handled by Tailwind */
 </style>
