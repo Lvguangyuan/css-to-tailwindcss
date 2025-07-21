@@ -7,7 +7,7 @@
     >
       <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <h1 class="text-lg font-semibold tracking-wide text-white">
-          1234&nbsp;CSS&nbsp;→&nbsp;TailwindCSS&nbsp;Converter
+          CSS&nbsp;→&nbsp;TailwindCSS&nbsp;Converter
         </h1>
         <span class="text-xs font-medium text-white/80">
           Built with&nbsp;Vue&nbsp;3&nbsp;+&nbsp;TailwindCSS
@@ -24,7 +24,7 @@
           class="flex flex-col rounded-2xl bg-white/60 shadow backdrop-blur-md ring-1 ring-black/5"
       >
         <header class="flex items-center justify-between border-b px-6 py-4">
-          <h2 class="font-medium">Paste CSS</h2>
+          <h2 class="font-medium">Paste CSS (auto-convert)</h2>
           <button
               :disabled="!cssInput.trim()"
               @click="convert"
@@ -77,27 +77,36 @@
       >
         <header class="flex items-center justify-between border-b px-6 py-4">
           <h2 class="font-medium">Generated Tailwind classes</h2>
-          <button
-              :disabled="!tailwindOutput.trim()"
-              @click="copyToClipboard"
-              class="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          <div class="flex items-center gap-2">
+            <!-- tiny badge -->
+            <span
+                v-if="copied"
+                class="animate-fade text-xs font-medium text-emerald-600"
             >
-              <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 16h8m-4-4h4m-9 8h9a2 2 0 002-2V7m-4 0H7a2 2 0 00-2 2v11a2 2 0 002 2h9a2 2 0 002-2V7a2 2 0 00-2-2h-3l-2-2H9l-2 2H4"
-              />
-            </svg>
-            Copy
-          </button>
+              Copied!
+            </span>
+            <button
+                :disabled="!tailwindOutput.trim()"
+                @click="copyToClipboard"
+                class="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+              >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16h8m-4-4h4m-9 8h9a2 2 0 002-2V7m-4 0H7a2 2 0 00-2 2v11a2 2 0 002 2h9a2 2 0 002-2V7a2 2 0 00-2-2h-3l-2-2H9l-2 2H4"
+                />
+              </svg>
+              Copy
+            </button>
+          </div>
         </header>
 
         <textarea
@@ -111,20 +120,21 @@
     <!-- Footer -->
     <footer class="pb-6">
       <p class="text-center text-xs text-gray-500/80">
-        © 2025 — Made&nbsp;with ❤️ by Your Name
+        © 2025 — Made with ❤️ by Gary Lyu
       </p>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { TailwindConverter } from 'css-to-tailwindcss'
 
 /* --- reactive state --- */
 const cssInput = ref('')
 const tailwindOutput = ref('')
 const converting = ref(false)
+const copied = ref(false)
 
 const converter = new TailwindConverter({
   remInPx: 16,
@@ -152,31 +162,55 @@ const converter = new TailwindConverter({
   },
 })
 
+/* --- auto-convert on input (debounced) --- */
+let debounceId: ReturnType<typeof setTimeout>
+watch(cssInput, () => {
+  clearTimeout(debounceId)
+  debounceId = setTimeout(() => {
+    if (cssInput.value.trim()) convert()
+    else tailwindOutput.value = ''
+  }, 400)
+})
+
 async function convert() {
-  if (!cssInput.value.trim()) return
   converting.value = true
   const { convertedRoot } = await converter.convertCSS(cssInput.value)
   tailwindOutput.value = extractApply(convertedRoot.toString())
   converting.value = false
 }
 
-/**
- * Extracts the part after `@apply` and converts px → rem.
- */
+/* extract classes & px→rem */
 function extractApply(css: string) {
   const raw = (css.match(/@apply\s+([^;]+);/) || [, ''])[1].trim()
-  return raw.replace(/(\d*\.?\d+)px/g, (_, num) => {
-    const rem = parseFloat(num) / 16
-    return `${rem.toFixed(4).replace(/\.?0+$/, '')}rem`
-  })
+  return raw.replace(/(\d*\.?\d+)px/g, (_, num) =>
+      `${(parseFloat(num) / 16).toFixed(4).replace(/\.?0+$/, '')}rem`,
+  )
 }
 
+/* copy + badge */
 async function copyToClipboard() {
   if (!tailwindOutput.value) return
   await navigator.clipboard.writeText(tailwindOutput.value)
+  copied.value = true
+  setTimeout(() => (copied.value = false), 1500)
 }
 </script>
 
 <style>
-/* No additional global styles needed – all handled by Tailwind */
+/* simple fade-in/out for the badge */
+@keyframes fade {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  10%,
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade {
+  animation: fade 1.5s ease-in-out forwards;
+}
 </style>
